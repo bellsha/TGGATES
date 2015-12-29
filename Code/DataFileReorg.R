@@ -2,161 +2,106 @@
 
 #
 #for desktop-transfer file to destination or build there
+#libraries:
+library(doBy)
+#set the path
+baseDir<-"//IT2/NICEATM_Data/TGGATES2"
 
-baseDir<-"/wikihomedir/sbell/TG-Gates"
-data<-read.table(file.path(baseDir,"Data/open_tggates_cel_file_attributeEDT.txt"), sep='\t', header=TRUE, na.strings='', quote="\"")
+#read in the data
+#this is afile with all the meta data for the experiments along with the clinical chemistry and the weights
+data<-read.table(file.path(baseDir,"/Data/Open-tggates_AllAttribute.tsv"), sep='\t', header=TRUE, na.strings='', quote="\"")
 
 colnames(data)
-# [1] "BARCODE"                   "ARR_DESIGN"               
-# [3] "EXP_ID"                    "GROUP_ID"                 
-# [5] "INDIVIDUAL_ID"             "ORGAN"                    
-# [7] "MATERIAL_ID"               "COMPOUND_NAME"            
-# [9] "COMPOUND_ABBREVIATION"     "COMPOUND_NO"              
-# [11] "SPECIES"                   "EXP_TEST_TYPE"            
-# [13] "SINGLE_REPEAT_TYPE"        "SEX_TYPE"                 
-# [15] "STRAIN_TYPE"               "ADMINISTRATION_ROUTE_TYPE"
-# [17] "ANIMAL_AGE.week."          "SACRIFICE_PERIOD"         
-# [19] "DOSE_LEVEL" 
+# [1] "BARCODE"          "ARR_DESIGN"       "EXP_ID"           "GROUP_ID"         "INDIVIDUAL_ID"    "ORGAN_ID"        
+# [7] "MATERIAL_ID"      "COMPOUND_NAME"    "COMPOUND.Abbr."   "COMPOUND_NO"      "SPECIES"          "TEST_TYPE"       
+# [13] "SIN_REP_TYPE"     "SEX_TYPE"         "STRAIN_TYPE"      "ADM_ROUTE_TYPE"   "ANIMAL_AGE.week." "SACRI_PERIOD"    
+# [19] "DOSE"             "DOSE_UNIT"        "DOSE_LEVEL"       "TERMINAL_BW.g."   "LIVER.g."         "KIDNEY_TOTAL.g." 
+# [25] "KIDNEY_R.g."      "KIDNEY_L.g."      "RBC.x10_4.ul."    "Hb.g.dL."         "Ht..."            "MCV.fL."         
+# [31] "MCH.pg."          "MCHC..."          "Ret..."           "Plat.x10_4.uL."   "WBC.x10_2.uL."    "Neu..."          
+# [37] "Eos..."           "Bas..."           "Mono..."          "Lym..."           "PT.s."            "APTT.s."         
+# [43] "Fbg.mg.dL."       "ALP.IU.L."        "TC.mg.dL."        "TG.mg.dL."        "PL.mg.dL."        "TBIL.mg.dL."     
+# [49] "DBIL.mg.dL."      "GLC.mg.dL."       "BUN.mg.dL."       "CRE.mg.dL."       "Na.meq.L."        "K.meq.L."        
+# [55] "Cl.meq.L."        "Ca.mg.dL."        "IP.mg.dL."        "TP.g.dL."         "RALB.g.dL."       "A.G"             
+# [61] "AST.IU.L."        "ALT.IU.L."        "LDH.IU.L."        "GTP.IU.L."        "DNA..."           "LDH..."   
 ###
-# #note that all the prior work usese "ORGAN_ID" and "TEST_TYPE" 
-# #so those 2 names need to be changed so i can ensure that other code doesnt break
-# y<-colnames(data)
-# y<-sub("ORGAN","ORGAN_ID", y)
-# y<-sub("EXP_TEST_TYPE","TEST_TYPE", y)
-# colnames(data)<-y
-# colnames(data)
-# # [1] "BARCODE"                   "ARR_DESIGN"               
-# # [3] "EXP_ID"                    "GROUP_ID"                 
-# # [5] "INDIVIDUAL_ID"             "ORGAN_ID"                 
-# # [7] "MATERIAL_ID"               "COMPOUND_NAME"            
-# # [9] "COMPOUND_ABBREVIATION"     "COMPOUND_NO"              
-# #[11] "SPECIES"                   "TEST_TYPE"                
-# #[13] "SINGLE_REPEAT_TYPE"        "SEX_TYPE"                 
-# #[15] "STRAIN_TYPE"               "ADMINISTRATION_ROUTE_TYPE"
-# #[17] "ANIMAL_AGE.week."          "SACRIFICE_PERIOD"         
-# #[19] "DOSE_LEVEL" 
 
-library(doBy)
+
 #note new file has different colnames so alway dbl check
 
-test<-splitBy(BARCODE ~ SPECIES + EXP_TEST_TYPE + ORGAN + SINGLE_REPEAT_TYPE, data=data)
+test<-splitBy( ~ SPECIES + TEST_TYPE + ORGAN_ID + SIN_REP_TYPE, data=data)
 names(test)
-# [1] "Rat|in vivo|Liver|Single"  "Rat|in vivo|Kidney|Single"
-# [3] "Rat|in vivo|Liver|Repeat"  "Rat|in vivo|Kidney|Repeat"
-# [5] "Rat|in vitro|Liver|NA"     "Human|in vitro|Liver|NA"  
+# [1] "Rat|in vivo|Liver|Single"  "Rat|in vivo|Kidney|Single" "Rat|in vivo|NA|Single"     "Rat|in vivo|Liver|Repeat" 
+# [5] "Rat|in vivo|Kidney|Repeat" "Rat|in vivo|NA|Repeat"     "Rat|in vitro|Liver|NA"     "Rat|in vitro|NA|NA"       
+# [9] "Human|in vitro|Liver|NA"   "Human|in vitro|NA|NA"   
 
 
-#BREAKING EACH PART INTO THE ORGAN (FIRST FOLDER LEVEL)
-#folder names/structure is SPECIES/TEST_TYPE/<ORGAN_ID>/<SINGLE_REPEAT_TYPE/
-#fname is cmpd.species.test_type.organid
-#or
-#cmpd.species.test_type.organid.single.repeat type
-#note that these arent needed, 
-human<-test$"Human|in vitro|Liver|NA" 
-ratCel<-test$"Rat|in vitro|Liver|NA"
-kidneyR<-test$"Rat|in vivo|Kidney|Repeat"
-kidneyS<-test$"Rat|in vivo|Kidney|Single"
-liverR<-test$"Rat|in vivo|Liver|Repeat"
-liverS<-test$"Rat|in vivo|Liver|Single"
+#Need to get the folder names/location for each of the experiments to process the microarry data
+
+#folder structure is SPECIES/TEST_TYPE/<ORGAN_ID>/<SIN_REP_TYPE/
+#file name is cmpd.species.test_type.organ_id
 
 
-#ok now for work
-data2<-data
+#ok now for getting the file paths
+#need the descriptors for the file names, do not need all the data as we can merge in the end
+data2<-data[,c(1,5:13)]
 #remove odd characters such that chem name can match file name
 data2$COMPOUND_NAME<-gsub("[[:space:]:]", '_', data$COMPOUND_NAME)
 #remove " ' " and ()for processing...i dont think there are any but to be safe
 data2$COMPOUND_NAME<-gsub("['()]", '', data2$COMPOUND_NAME)
-#remove odd characters such that organ name can match file name
+#Remoiving the space
 data2$TEST_TYPE<-gsub("[[:space:]]", '_', data$TEST_TYPE)
-#to add on the missing leading 0 
-data2$BARCODE <- paste("00", data$BARCODE, sep='')
 #adding in the origional compound name for use later on
 data2$CHEMICAL<-data$COMPOUND_NAME
 
 #####################
 # Folder structure and folder names are odd. Folder names are givn as :
 # COMPOUND_NAME.SPECIES.TEST_TYPE.ORGAN_ID for invitro
-#and COMPOUND_NAME.SPECIES.TEST_TYPE.ORGAN_ID.SINGLE_REPEAT_TYPE for invivo
+#and COMPOUND_NAME.SPECIES.TEST_TYPE.ORGAN_ID.SIN_REP_TYPE for invivo
 
-spltData<-splitBy(BARCODE ~ SPECIES + TEST_TYPE + ORGAN_ID + COMPOUND_NAME + SINGLE_REPEAT_TYPE, data=data2)
-ids<-NULL
-filePath<-NULL
-folder<-NULL
-#fn<-NULL
-for(i in 1:length(names(spltData))){
-  temp<-spltData[[names(spltData)[i]]]
-  spe<-unique(temp$SPECIES)
-  tt<-unique(temp$TEST_TYPE)
-  org<-unique(temp$ORGAN_ID)
-  rep<-unique(temp$SINGLE_REPEAT_TYPE)
-  cem<-unique(temp$COMPOUND_NAME)
-  if(length(org)!=1 || length(cem)!=1){ 
-     cat("error in:", org, " :: ", cem, '\n')
-   }
-  else if(tt == "in_vitro"){
-    idstemp<-as.character(temp$BARCODE)
-    ids<-c(ids, idstemp)
-    fn<-paste(cem, spe, tt, org, sep=".")
-    folder<-c(folder, rep(file.path(spe,tt,fn, "celfiles"), length(idstemp)))
-    filePath<-c(filePath, file.path(spe, tt, fn, "celfiles", paste(idstemp, "CEL", sep=".")))
-  }
-  else if(tt == "in_vivo"){
-    idstemp<-as.character(temp$BARCODE)
-    ids<-c(ids, idstemp)
-    fn<-paste(cem, spe, tt, org,rep, sep=".")
-    folder<-c(folder, rep(file.path(spe,tt, org, rep,fn, "celfiles"), length(idstemp)))
-    filePath<-c(filePath, file.path(spe, tt, org, rep, fn, "celfiles", paste(idstemp, "CEL", sep=".")))
-  }
-}
+#need to get out the path for each microarray file. Note that some animals/cell cultures did got get arrays, thus there will be no files
+#to account for that the path is set to "NA"
+data2$folder<-file.path("Data/Microarray", paste(data2$COMPOUND_NAME,data2$SPECIES, data2$TEST_TYPE, data2$ORGAN_ID, data2$SIN_REP_TYPE, sep='.'), "celfiles")
+data2$folder[data2$BARCODE=="No ChipData"]<-NA
+data2$filename<-file.path(data2$folder, paste(data2$BARCODE, "CEL", sep='.'))
+data2$filename[data2$BARCODE=="No ChipData"]<-NA
 
-dataNew<-merge(data2, cbind(ids, folder, filePath), by.x='BARCODE', by.y='ids', all.y=TRUE)
-#spot check
-temp1<-subset(dataNew, COMPOUND_NAME == "phenylanthranilic_acid" & SINGLE_REPEAT_TYPE == "Repeat"& ORGAN_ID == "Liver")
+#Spot check
+temp1<-subset(data2, COMPOUND_NAME == "phenylanthranilic_acid" & SIN_REP_TYPE == "Repeat"& ORGAN_ID == "Liver")
 dim(temp1)
-#[1] 47 22
+#[1] 47 13
 temp1[c(1,5,22,47),]
+subset(data2, CHEMICAL =="1% cholesterol + 0.25% sodium cholate")[1:2,]
 
-
+#as everything looks good, going to append the origional data frame with the new identifiers of needed to get out the array data
+dataNew<-cbind(data2[,c("folder", "filename")], data)
 dim(dataNew)
-#[1] 21385    22
+#[1] 33566    68
 colnames(dataNew)
-# [1] "BARCODE"                   "ARR_DESIGN"               
-# [3] "EXP_ID"                    "GROUP_ID"                 
-# [5] "INDIVIDUAL_ID"             "ORGAN_ID"                 
-# [7] "MATERIAL_ID"               "COMPOUND_NAME"            
-# [9] "COMPOUND_ABBREVIATION"     "COMPOUND_NO"              
-# [11] "SPECIES"                   "TEST_TYPE"                
-# [13] "SINGLE_REPEAT_TYPE"        "SEX_TYPE"                 
-# [15] "STRAIN_TYPE"               "ADMINISTRATION_ROUTE_TYPE"
-# [17] "ANIMAL_AGE.week."          "SACRIFICE_PERIOD"         
-# [19] "DOSE_LEVEL"                "CHEMICAL"                 
-# [21] "folder"                    "filePath"                      
-fn<-paste("Data/Microarray_Data_ALLLabels_", gsub('-','',Sys.Date()),".txt",sep="")
-write.table(dataNew, file =file.path(baseDir, fn) , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
-Rat<-subset(dataNew, SPECIES == "Rat")
-fn<-paste("Data/Microarray_Data_RatLabels_", gsub('-','',Sys.Date()),".txt",sep="")
-write.table(Rat, file =file.path(baseDir, fn) , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
+# [1] "folder"           "filename"         "BARCODE"          "ARR_DESIGN"       "EXP_ID"           "GROUP_ID"         "INDIVIDUAL_ID"    "ORGAN_ID"        
+# [9] "MATERIAL_ID"      "COMPOUND_NAME"    "COMPOUND.Abbr."   "COMPOUND_NO"      "SPECIES"          "TEST_TYPE"        "SIN_REP_TYPE"     "SEX_TYPE"        
+# [17] "STRAIN_TYPE"      "ADM_ROUTE_TYPE"   "ANIMAL_AGE.week." "SACRI_PERIOD"     "DOSE"             "DOSE_UNIT"        "DOSE_LEVEL"       "TERMINAL_BW.g."  
+# [25] "LIVER.g."         "KIDNEY_TOTAL.g."  "KIDNEY_R.g."      "KIDNEY_L.g."      "RBC.x10_4.ul."    "Hb.g.dL."         "Ht..."            "MCV.fL."         
+# [33] "MCH.pg."          "MCHC..."          "Ret..."           "Plat.x10_4.uL."   "WBC.x10_2.uL."    "Neu..."           "Eos..."           "Bas..."          
+# [41] "Mono..."          "Lym..."           "PT.s."            "APTT.s."          "Fbg.mg.dL."       "ALP.IU.L."        "TC.mg.dL."        "TG.mg.dL."       
+# [49] "PL.mg.dL."        "TBIL.mg.dL."      "DBIL.mg.dL."      "GLC.mg.dL."       "BUN.mg.dL."       "CRE.mg.dL."       "Na.meq.L."        "K.meq.L."        
+# [57] "Cl.meq.L."        "Ca.mg.dL."        "IP.mg.dL."        "TP.g.dL."         "RALB.g.dL."       "A.G"              "AST.IU.L."        "ALT.IU.L."       
+# [65] "LDH.IU.L."        "GTP.IU.L."        "DNA..."           "LDH..."                             
+
+
+write.table(dataNew, file =file.path(baseDir, "Data/Open-tggates_AllAttribute_EDT.txt") , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
 
 ############
-#do to space issues i need to work with a ss of data.
-#I will try just liver (since that is what I will work on first)
-#and test out using sym links in my script
-LiverData<-subset(Rat, ORGAN_ID == 'Liver' & SINGLE_REPEAT_TYPE == "Single")
+#getting out just the rat liver data
+LiverData<-subset(dataNew, SPECIES=="RAT" & ORGAN_ID == 'Liver')
 dim(LiverData)
-fn<-paste("Data/Microarray_Data_RatLabels_LIVER_Single", gsub('-','',Sys.Date()),".txt",sep="")
-write.table(LiverData, file =file.path(baseDir, fn) , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
-#make a simple file for the inputs
-inputs<-unique(Rat[, c("SPECIES","TEST_TYPE", "SINGLE_REPEAT_TYPE","ORGAN_ID", "COMPOUND_NAME","folder" )])
-fn<-paste("Data/Microarray_Data_RatMAPPINGS_", gsub('-','',Sys.Date()),".txt",sep="")
-write.table(inputs, file =file.path(baseDir, fn) , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
+write.table(LiverData, file =file.path(baseDir, "Files/Open-tggates_AllAttribute_EDT_RatLiver.txt") , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
+
+
+#make a smaller file for testing
 #
-LiverInputs<-subset(inputs, ORGAN_ID == 'Liver' & SINGLE_REPEAT_TYPE == "Single")
-testInputs<-LiverInputs[c(1,10,20,40,50:55),]
-fn<-paste("Data/Microarray_Data_RatMAPPINGS_LIVER_Single_", gsub('-','',Sys.Date()),".txt",sep="")
-write.table(LiverInputs, file =file.path(baseDir, fn) , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
-#
-fn<-paste("Data/Microarray_Data_RatMAPPINGS_TEST_", gsub('-','',Sys.Date()),".txt",sep="")
-write.table(testInputs, file =file.path(baseDir, fn) , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
+LiverInputs<-subset(LiverData, ORGAN_ID == 'Liver' & SIN_REP_TYPE == "Single")[c(1,10,20,40,50:55),]
+write.table(LiverInputs, file =file.path(baseDir, "Files/Open-tggates_AllAttribute_EDT_RatLiver_Test.txt") , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
+
 
 
 
