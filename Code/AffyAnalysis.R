@@ -60,14 +60,15 @@ info$Array_ID<-paste(info$BARCODE, '.CEL', sep='')
 #note that to get the control and all treatments corresponding to the chemical treatment group,
 #I need to use the chem variable and not the CHEMICAL column. 
 #A value of 'NA" for dose indicates controls
-treatment<-as.factor(paste(info$ORGAN_ID, chem, info$DOSE_LEVEL, info$SACRIFICE_PERIOD, info$SINGLE_REPEAT_TYPE, sep="_"))
-#remove special characters from treatment as it will become column name
-treatment<-gsub("[[:space:],%-/]","",treatment)
-info$treatment<-treatment
+info$treatment<-gsub("[[:space:]]","",as.factor(paste(info$ORGAN_ID, chem, info$DOSE_LEVEL, info$SACRI_PERIOD, info$SIN_REP_TYPE, sep="_")))
+# #remove special characters from treatment as it will become column name
+# treatment<-gsub("[[:space:],%-/]","",treatment)
+# info$treatment<-treatment
 #adding in experiment information as it is needed downstream and easier to put in here
-experiment<-gsub("[[:space:],%-/]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRIFICE_PERIOD, info$SINGLE_REPEAT_TYPE, sep="_")))
-info$experiment<-experiment
-treats<-unique(treatment)
+# experiment<-gsub("[[:space:],%-/]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRIFICE_PERIOD, info$SINGLE_REPEAT_TYPE, sep="_")))
+# info$experiment<-experiment
+info$experiment <-gsub("[[:space:]]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRI_PERIOD, info$SIN_REP_TYPE, sep="_")))
+treats<-unique(info$treatment)
 ArrayAve<-NULL
 for(i in 1:length(treats)){
   grp_arrays<-subset(info, treatment == treats[i])$Array_ID
@@ -91,18 +92,19 @@ fname<-paste("ExpAVE",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
 #the pattern of filenames should facilitate the retreival and then the checking
 #write.table(ArrayAve, file=file.path(outdir, fname), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) # Writes expression values to text file in working directory.
 write.table(ArrayAve, file=file.path(outdir, "ProcArray", fname), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) 
+
+
 #####
 #need to make a new outputs file for the next steps- standardizing across the experiments
 #and other things that may pop up where sorting based on column name might be a PITA
 #inclusion of runID for check when wanting to collect several days worth post-run
-info2<-cbind(runID,fileName=fname,unique(info[,c("SPECIES","ORGAN_ID", "COMPOUND_NAME", "DOSE_LEVEL", "SACRIFICE_PERIOD","TEST_TYPE","SINGLE_REPEAT_TYPE", "folder", "treatment", "experiment")]))
+info2<-cbind(runID,fileName=fname,unique(info[,c("SPECIES","ORGAN_ID", "COMPOUND_NAME","COMPOUND.Abbr.", "DOSE_LEVEL", "SACRI_PERIOD","TEST_TYPE","SIN_REP_TYPE", "folder", "treatment", "experiment")]))
 info2<-subset(info2, treatment %in% colnames(ArrayAve))
-fname<-paste("RunInfo", organ, paste(runID, 'txt', sep='.'), sep='-')
+fname<-paste("RunInfoAve", organ, paste(runID, 'txt', sep='.'), sep='-')
 #append the existing table (or make new if yet to be created)
 #need to remove the column headings so that it appends clean
 colnames(info2)
-#[1] "runID"              "fileName"           "SPECIES"            "ORGAN_ID"           "COMPOUND_NAME"     
-#[6] "DOSE_LEVEL"         "SACRIFICE_PERIOD"   "TEST_TYPE"          "SINGLE_REPEAT_TYPE" "folder"            
-#[11] "treatment"          "experiment" 
+# [1] "runID"          "fileName"       "SPECIES"        "ORGAN_ID"       "COMPOUND_NAME"  "COMPOUND.Abbr." "DOSE_LEVEL"     "SACRI_PERIOD"  
+# [9] "TEST_TYPE"      "SIN_REP_TYPE"   "folder"         "treatment"      "experiment"  
 write.table(info2, file=file.path(outdir, fname), sep='\t', append=TRUE, row.names=FALSE, col.names=FALSE, quote=FALSE)
 

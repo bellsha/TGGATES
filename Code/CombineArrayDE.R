@@ -27,8 +27,8 @@ if(length(args)==0){
   runID<-'testLiv'
   Repeat<-"Single"
   t1<-0.75
-  t2<-0.75
-  k<-50
+#   t2<-0.75
+#   k<-50
   fc<- 2
 }else{
   print(args)
@@ -39,9 +39,9 @@ if(length(args)==0){
 #libraries
 library(gdata)
 library(doBy)
-library(gplots)
-library(RColorBrewer)
-mypalette <- rev(brewer.pal(9,"RdBu"))
+# library(gplots)
+# library(RColorBrewer)
+# mypalette <- rev(brewer.pal(9,"RdBu"))
 ###################################
 #read in the file with the meta data for the experiments, and file names
 #to make it simple as these parameters are required for AffyAnalysis to create the file name
@@ -189,38 +189,38 @@ deDesc[deData >= 1]<-1
 fname<-paste("Desc2FC",paste("T1-", t1, sep=''),paste("FC-", fc, sep=''),organ, paste(runID, 'txt', sep='.'), sep='-')
 write.table(deDesc, file=file.path(outdir, fname), sep='\t', col.names=TRUE, row.names=TRUE,quote=FALSE )
 
-#
-###########
-#plotting
-pnm<-paste("DataThresholdPlotv2",paste("T1-", t1, sep=''),paste("FC-", fc, sep=''),runID, paste(gsub('-','',Sys.Date()), 'png', sep='.'), sep='-')
-png(file=file.path(outdir, pnm), width=7, height=7, units="in",pointsize=16, bg='white', res=150)
-plot(density(scaleArray), main="Data Processing", col="black", xlab='log2 intensity')
-lines(density(scaleArrayT1), col="red")
-lines(density(scaleArrayT1FC),col='blue')
-legend("topright", legend=c('Inital data', paste("Post T1=",t1), paste("Post FC=",fc)), col=c('black','red','blue'), lty=1)
-dev.off()
-
-########
-mapkey<-as.data.frame(cbind(key=c(1:length(colnames(deData))), label=colnames(deData)))
-pnmk<-paste("heatmapKey",t1, fc,runID, paste(gsub('-','',Sys.Date()), 'txt', sep='.'), sep='-')
-write.table(mapkey, file=file.path(outdir, pnmk), sep='\t', col.names=TRUE, quote=FALSE)
-
-dcor<-cor(t(deData), method='pearson')
-pctree<-hclust(as.dist(1-dcor), method='complete')
-pnm<-paste("DiffExprplot",runID, paste(gsub('-','',Sys.Date()), 'png', sep='.'), sep='-')
-png(file=file.path(outdir, pnm), width=8, height=8, units="in",pointsize=16, bg='white', res=150)
-heatmap.2(deData, dendrogram='row', Rowv=as.dendrogram(pctree), trace='none', col=rev(brewer.pal(9,"RdBu")), 
-          symbreaks=TRUE,labRow='', labCol=mapkey$key, main=bquote("DiffExpr,"~T1==.(t1)~FC==.(fc)))
-dev.off()
-AssayTree<-hclust(dist(t(scaleArrayT1FC), method="euclidean"), method="ward")
-##################
-#plotting intensity heatmap
-Acor<-cor(t(scaleArrayT1FC), method='pearson')
-ProbeTree<-hclust(as.dist(1-Acor), method='complete')
-pnm<-paste("IntensityHeatmap",paste("T1-", t1, sep=''),paste("FC-", fc, sep=''),runID, paste(gsub('-','',Sys.Date()), 'png', sep='.'), sep='-')
-png(file=file.path(outdir, pnm), width=12, height=8, pointsize=14,units='in', bg='white', res=150)
-heatmap.2(as.matrix(scaleArrayT1FC), Rowv=as.dendrogram(ProbeTree),Colv='', col=mypalette[5:9], dendrogram='row', trace='none', labRow='',labCol='', main=bquote("Scaled Intensities,"~T1==.(t1)~FC==.(fc)))
-dev.off()
+# #
+# ###########
+# #plotting
+# pnm<-paste("DataThresholdPlotv2",paste("T1-", t1, sep=''),paste("FC-", fc, sep=''),runID, paste(gsub('-','',Sys.Date()), 'png', sep='.'), sep='-')
+# png(file=file.path(outdir, pnm), width=7, height=7, units="in",pointsize=16, bg='white', res=150)
+# plot(density(scaleArray), main="Data Processing", col="black", xlab='log2 intensity')
+# lines(density(scaleArrayT1), col="red")
+# lines(density(scaleArrayT1FC),col='blue')
+# legend("topright", legend=c('Inital data', paste("Post T1=",t1), paste("Post FC=",fc)), col=c('black','red','blue'), lty=1)
+# dev.off()
+# 
+# ########
+# mapkey<-as.data.frame(cbind(key=c(1:length(colnames(deData))), label=colnames(deData)))
+# pnmk<-paste("heatmapKey",t1, fc,runID, paste(gsub('-','',Sys.Date()), 'txt', sep='.'), sep='-')
+# write.table(mapkey, file=file.path(outdir, pnmk), sep='\t', col.names=TRUE, quote=FALSE)
+# 
+# dcor<-cor(t(deData), method='pearson')
+# pctree<-hclust(as.dist(1-dcor), method='complete')
+# pnm<-paste("DiffExprplot",runID, paste(gsub('-','',Sys.Date()), 'png', sep='.'), sep='-')
+# png(file=file.path(outdir, pnm), width=8, height=8, units="in",pointsize=16, bg='white', res=150)
+# heatmap.2(deData, dendrogram='row', Rowv=as.dendrogram(pctree), trace='none', col=rev(brewer.pal(9,"RdBu")), 
+#           symbreaks=TRUE,labRow='', labCol=mapkey$key, main=bquote("DiffExpr,"~T1==.(t1)~FC==.(fc)))
+# dev.off()
+# AssayTree<-hclust(dist(t(scaleArrayT1FC), method="euclidean"), method="ward")
+# ##################
+# #plotting intensity heatmap
+# Acor<-cor(t(scaleArrayT1FC), method='pearson')
+# ProbeTree<-hclust(as.dist(1-Acor), method='complete')
+# pnm<-paste("IntensityHeatmap",paste("T1-", t1, sep=''),paste("FC-", fc, sep=''),runID, paste(gsub('-','',Sys.Date()), 'png', sep='.'), sep='-')
+# png(file=file.path(outdir, pnm), width=12, height=8, pointsize=14,units='in', bg='white', res=150)
+# heatmap.2(as.matrix(scaleArrayT1FC), Rowv=as.dendrogram(ProbeTree),Colv='', col=mypalette[5:9], dendrogram='row', trace='none', labRow='',labCol='', main=bquote("Scaled Intensities,"~T1==.(t1)~FC==.(fc)))
+# dev.off()
 
 
 
