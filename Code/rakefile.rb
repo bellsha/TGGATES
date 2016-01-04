@@ -4,19 +4,20 @@
 
 require "yaml"
 require "fileutils"
+#require "forkmanager"
 require "fork_manager"
 require "timeout"
 
 #get inputs
 #these need to be outside the task inorder for the file tasks to execute correctly
-@parameters = ENV["parameters"] || "../Files/InputParameters-20141030.yml"
+@parameters = ENV["parameters"] || "Z:/TGGATES2/Files/InputParametersTest-20160104.yml"
 @OrganType = ENV["OrganType"] || "Liver"
-@Cell = ENV["TestType"] || "in_vivo"
+@Cell = ENV["TestType"] || "in vivo"
 @Repeat = ENV["RepeatType"] || "MULTI" #note MULTI refers to both single and repeat dosing stragaies
 @runID = ENV["runID"] || "LiverRun" #note should include "single" "rep" or "invitro" in name or similar
 @t1 = ENV["t1"] || 0.75
 @t2 = ENV["t2"] || 0.75
-@k = ENV["k"] || 50
+#@k = ENV["k"] || 50
 @fc = ENV["fc"] || 2
 
 @config = Hash[YAML.load_file(@parameters).map{|(k,v)| [k.to_sym,v]}]
@@ -58,7 +59,7 @@ od = @config[:runParameters]["basedir"]
 #end
 ####################################################
 #to run:
-#rake parameters="../Files/TestInputParameters-20130718.yml" OrganType="Liver" runID="testLivSviv" RepeatType='Single' get_input
+# rake parameters="Z:/TGGATES2/Files/InputParametersRatLiver-20160104.yml" OrganType="Liver" runID="testLivSviv"  get_input --dry-run
 #desc "Prep parameters"
 task :get_input do |t, args|
   #getting the parameters in a way that can be used by R scripts
@@ -89,8 +90,8 @@ task :get_input do |t, args|
       pStr.concat("#{k}=#{v.inspect} ")
     end
     #note that there needs to be a space b/w variables!!!
-#    @pAry[j] = pStr + rpStr + "t1=#{@t1} "+"t2=#{@t2} "+"k=#{@k} "+"runID=#{@runID.inspect} "+"outdir=#{@outDir.inspect} "+"Repeat=#{@Repeat.inspect} "
-    @pAry[j] = pStr + rpStr + "t1=#{@t1} "+"t2=#{@t2} "+"fc=#{@fc} "+"k=#{@k} "+"runID=#{@runID.inspect} "+"outdir=#{@outDir.inspect} "+"Repeat=#{@Repeat.inspect} "+"AnnFile=#{@AnnFile.inspect} "+"PathFile=#{@PathFile.inspect}"
+#    @pAry[j] = pStr + rpStr + "t1=#{@t1} "+"t2=#{@t2} "+"fc=#{@fc} "+"k=#{@k} "+"runID=#{@runID.inspect} "+"outdir=#{@outDir.inspect} "+"Repeat=#{@Repeat.inspect} "+"AnnFile=#{@AnnFile.inspect} "+"PathFile=#{@PathFile.inspect}"
+	@pAry[j] = pStr + rpStr + "t1=#{@t1} "+"t2=#{@t2} "+"fc=#{@fc} "+"runID=#{@runID.inspect} "+"outdir=#{@outDir.inspect} "+"Repeat=#{@Repeat.inspect} "+"AnnFile=#{@AnnFile.inspect} "+"PathFile=#{@PathFile.inspect}"
   end
 #   puts "Input Complete!!"
    puts "Used parameters located #{@parameters}"
@@ -151,7 +152,7 @@ directory "#{@outDir}"
 directory "#{@logDir}"
 ##############################
 #to run: (use -n for a dryrun first)
-#rake parameters="../Files/TestInputParameters-20141030.yml" OrganType="Liver" runID="NetRun1410" RepeatType="MULTI" numProc=20 R_Affy -t
+# rake parameters="Z:/TGGATES2/Files/InputParametersRatLiver-20160104.yml" OrganType="Liver" runID="RatLiv20160104" numProc=3  R_Affy --dry-run
 
 desc "Perform RMA normilzation and treatment-level summerization for each chemical by calling a file task"
 task :R_Affy =>[:get_input, "#{@AffyProcFiles}"] do
@@ -203,10 +204,6 @@ task :R_PathEnrich  =>[:get_input,"#{@pathenrich}"] do
   puts "Enrichment object and summery ready"
   puts "#{@pathenrich}"
 end
-
-
-
-
 
 
 #######################################################################

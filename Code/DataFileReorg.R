@@ -4,8 +4,11 @@
 #for desktop-transfer file to destination or build there
 #libraries:
 library(doBy)
+library(yaml)
 #set the path
 baseDir<-"//IT2/NICEATM_Data/TGGATES2"
+#local
+#baseDir<-"Z:/TGGATES2"
 
 #read in the data
 #this is afile with all the meta data for the experiments along with the clinical chemistry and the weights
@@ -92,7 +95,7 @@ write.table(dataNew, file =file.path(baseDir, "Data/Open-tggates_AllAttribute_ED
 
 ############
 #getting out just the rat liver data
-LiverData<-subset(dataNew, SPECIES=="RAT" & ORGAN_ID == 'Liver')
+LiverData<-subset(dataNew, SPECIES=="Rat" & ORGAN_ID == 'Liver')
 dim(LiverData)
 write.table(LiverData, file =file.path(baseDir, "Files/Open-tggates_AllAttribute_EDT_RatLiver.txt") , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
 
@@ -103,5 +106,10 @@ LiverInputs<-subset(LiverData, ORGAN_ID == 'Liver' & SIN_REP_TYPE == "Single")[c
 write.table(LiverInputs, file =file.path(baseDir, "Files/Open-tggates_AllAttribute_EDT_RatLiver_Test.txt") , sep='\t', col.names=TRUE, row.names=FALSE, quote=FALSE)
 
 
-
+# #Create the YAML file for giving the inputs for analysis
+# #we will create 2, the full liver data and the test one with the handfull of entries
+# 
+# 
+# testyaml<-as.yaml(LiverInputs[,c('ORGAN_ID','TEST_TYPE','SIN_REP_TYPE','folder','COMPOUND_NO')])
+# write(testyaml, file =file.path(baseDir, "Files/test.yml"))
 
