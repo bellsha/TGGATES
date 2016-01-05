@@ -1,6 +1,10 @@
-#Affy array analysis
+#Title: AffyAnalysis.R
+#Author: SHannon Bell, ILS-INC, sbell@ils-inc.com
+#
+#
 #performs RMA normalization for all arrays in a folder then
-#Calcualtes the average probe intensity for each treatment
+#Calcualtes the average probe intensity for each treatment so give both
+#Individual animal probe intensity and the treatment average
 #Parameters:
 #d= the working directory
 #od = the output directory for files that are to be collected
@@ -9,8 +13,7 @@
 #chem = the chemical name of interest
 #organ = organ name of interest
 #runID = run id value
-#NOTE Thisn code is modified for use with TG-Gates data. 
-#Changes are wrt the input file for experimental parameters
+
 
 ################################
 #get the parameters from the environment:
@@ -19,10 +22,10 @@ if(length(args)==0){
   print("No arguments supplied.")
   break
   ##supply default values
-  d <-"/TG-Gates/Data/Rat/in_vivo/Liver/Single/colchicine.Rat.in_vivo.Liver.Single/celfiles"
-  exptinfo<-'/TG-Gates/Data/Microarray_Data_RatLabels_20141030.txt'
-  outdir <- '/TG-Gates/Output/test'
-  chem<-'colchicine'
+  d <-"Z:/TGGATES2/Data/Microarray/acetaminophen.Rat.in_vivo.Liver.Single/celfiles"
+  exptinfo<-"Z:/TGGATES2/Files/Open-tggates_AllAttribute_EDT_RatLiver.txt"
+  outdir <- 'Z:/TGGATES2/Output/test'
+  chem<-'APAP'
   organ<-'Liver'
   runID<-'test'
   Repeat<-"Single"
@@ -47,27 +50,32 @@ data<-ReadAffy()
 eset <- rma(data,verbose=FALSE, background=FALSE )#rma with no bkgd correction
 #NOTE: eset from rma returns obj with expression values in log2 space
 #create a file name and save the eset object
-fname<-paste("eset", organ, chem, paste(runID, 'txt', sep='.'), sep='-')
-write.exprs(eset, file=fname) # Writes expression values to working directory.
+#fname<-paste("eset", organ, chem, paste(runID, 'txt', sep='.'), sep='-')
+#write.exprs(eset, file=fname) # Writes expression values to working directory.
 ###############################################
 #get the average for each treatment level including controls
 #convert to dataframe
 edata <- as.data.frame(exprs(eset))
 #note the columns are the cel file names
-#use this to remove the information for the arrays from the information table
-info<-subset(allinfo, BARCODE %in% as.character(gsub('.CEL','',colnames(edata)) ))
+#use this to extract array information from the information table
+#since there may be samples from the same treatment group that dont have microarrays we will need to bring that in seperatly anyway
+#so removing that material now
+info<-subset(allinfo, BARCODE %in% as.character(gsub('.CEL','',colnames(edata)) ))[,c('folder','filename','BARCODE','ORGAN_ID','COMPOUND_NAME','COMPOUND.Abbr.','SPECIES','TEST_TYPE','SIN_REP_TYPE','SACRI_PERIOD','DOSE_LEVEL')]
 info$Array_ID<-paste(info$BARCODE, '.CEL', sep='')
-#note that to get the control and all treatments corresponding to the chemical treatment group,
-#I need to use the chem variable and not the CHEMICAL column. 
-#A value of 'NA" for dose indicates controls
+#Creating a treatment variable that idenitifies individuals getting the same treatment
+#remove special characters from treatment as it will become column name
 info$treatment<-gsub("[[:space:]]","",as.factor(paste(info$ORGAN_ID, chem, info$DOSE_LEVEL, info$SACRI_PERIOD, info$SIN_REP_TYPE, sep="_")))
-# #remove special characters from treatment as it will become column name
-# treatment<-gsub("[[:space:],%-/]","",treatment)
-# info$treatment<-treatment
-#adding in experiment information as it is needed downstream and easier to put in here
+#adding in experiment information, this will be several treatments by dose (still seperated by singel or repeat dosage)
 # experiment<-gsub("[[:space:],%-/]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRIFICE_PERIOD, info$SINGLE_REPEAT_TYPE, sep="_")))
-# info$experiment<-experiment
 info$experiment <-gsub("[[:space:]]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRI_PERIOD, info$SIN_REP_TYPE, sep="_")))
+info$RunID <- runID
+info$ProcessFileInd<-paste("ProcArrayInd",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
+
+#write out the efile
+write.table(edata, file=file.path(outdir, unique(info$ProcessFileInd)), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) #mean expression values
+
+###########################################
+#This section gets the means for each treatment
 treats<-unique(info$treatment)
 ArrayAve<-NULL
 for(i in 1:length(treats)){
@@ -86,25 +94,18 @@ colnames(ArrayAve)<-treats
 #removal of columns lacking data
 ArrayAve<-ArrayAve[,!apply(is.na(ArrayAve),2,all)]
 #now write the file for use in integrating datasets
-Repeat<-unique(info$SINGLE_REPEAT_TYPE)
-fname<-paste("ExpAVE",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
+#info2<-subset(info, treatment %in% colnames(ArrayAve))#should be the same dimensions
+info$ProcessFileAve<-paste("ProcArrayMean",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
 #write object to table to facilitate input and mergeing
 #the pattern of filenames should facilitate the retreival and then the checking
-#write.table(ArrayAve, file=file.path(outdir, fname), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) # Writes expression values to text file in working directory.
-write.table(ArrayAve, file=file.path(outdir, "ProcArray", fname), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) 
+write.table(ArrayAve, file=file.path(outdir, unique(info$ProcessFileAve)), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) #mean expression values
+#and to make a shorter info file that doesnt contain all the clinical chemistry values (which arent helpful here)
+########################################
 
-
-#####
-#need to make a new outputs file for the next steps- standardizing across the experiments
-#and other things that may pop up where sorting based on column name might be a PITA
-#inclusion of runID for check when wanting to collect several days worth post-run
-info2<-cbind(runID,fileName=fname,unique(info[,c("SPECIES","ORGAN_ID", "COMPOUND_NAME","COMPOUND.Abbr.", "DOSE_LEVEL", "SACRI_PERIOD","TEST_TYPE","SIN_REP_TYPE", "folder", "treatment", "experiment")]))
-info2<-subset(info2, treatment %in% colnames(ArrayAve))
-fname<-paste("RunInfoAve", organ, paste(runID, 'txt', sep='.'), sep='-')
-#append the existing table (or make new if yet to be created)
-#need to remove the column headings so that it appends clean
-colnames(info2)
-# [1] "runID"          "fileName"       "SPECIES"        "ORGAN_ID"       "COMPOUND_NAME"  "COMPOUND.Abbr." "DOSE_LEVEL"     "SACRI_PERIOD"  
-# [9] "TEST_TYPE"      "SIN_REP_TYPE"   "folder"         "treatment"      "experiment"  
-write.table(info2, file=file.path(outdir, fname), sep='\t', append=TRUE, row.names=FALSE, col.names=FALSE, quote=FALSE)
+#colnames(info)
+# [1] "folder"         "filename"       "BARCODE"        "ORGAN_ID"       "COMPOUND_NAME"  "COMPOUND.Abbr." "SPECIES"       
+# [8] "TEST_TYPE"      "SIN_REP_TYPE"   "SACRI_PERIOD"   "DOSE_LEVEL"     "Array_ID"       "treatment"      "experiment"    
+# [15] "RunID"          "ProcessFileInd" "ProcessFileAve"
+fname<-paste("RunInfo", organ, paste(runID, 'txt', sep='.'), sep='-')
+write.table(info, file=file.path(outdir, fname), sep='\t', append=TRUE, row.names=FALSE, col.names=FALSE, quote=FALSE)
 
