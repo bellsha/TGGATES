@@ -3,7 +3,9 @@
 require 'yaml'
 ####################
 #set path, to be changed as needed
-pth = "//IT2/NICEATM_Data/TGGATES2"
+#pth = "//IT2/NICEATM_Data/TGGATES2"
+#local
+pth = "Z:/TGGATES2"
 #change this as needed
 #test
 #infilename="/Files/Open-tggates_AllAttribute_EDT_RatLiver_Test.txt"
