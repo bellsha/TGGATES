@@ -3,7 +3,7 @@
 require 'yaml'
 ####################
 #set path, to be changed as needed
-#pth = "//IT2/NICEATM_Data/TGGATES2"
+#pth = "Z:/IT2/NICEATM_Data/TGGATES2"
 #local
 pth = "Z:/TGGATES2"
 #change this as needed

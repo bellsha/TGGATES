@@ -17,7 +17,8 @@
 
 ################################
 #get the parameters from the environment:
-args=(commandArgs(TRUE))
+args=commandArgs(TRUE)
+print(paste(commandArgs(), collapse = " "))
 if(length(args)==0){
   print("No arguments supplied.")
   break
@@ -32,8 +33,9 @@ if(length(args)==0){
   
 }else{
   print(args)
-  for(i in 1:length(args)){
-    eval(parse(text=args[[i]]))
+  args2<-strsplit(args, " ")
+  for(i in 1:length(args2)){
+    eval(parse(text=args2[[i]]))
   }
 }
 #Import libraries
@@ -69,10 +71,10 @@ info$treatment<-gsub("[[:space:]]","",as.factor(paste(info$ORGAN_ID, chem, info$
 # experiment<-gsub("[[:space:],%-/]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRIFICE_PERIOD, info$SINGLE_REPEAT_TYPE, sep="_")))
 info$experiment <-gsub("[[:space:]]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRI_PERIOD, info$SIN_REP_TYPE, sep="_")))
 info$RunID <- runID
-info$ProcessFileInd<-paste("ProcArrayInd",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
+info$ProcessFileInd<-paste("Ind",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
 
 #write out the efile
-write.table(edata, file=file.path(outdir, unique(info$ProcessFileInd)), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) #mean expression values
+write.table(edata, file=file.path(outdir,"ProcArray", unique(info$ProcessFileInd)), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) #mean expression values
 
 ###########################################
 #This section gets the means for each treatment
@@ -95,10 +97,10 @@ colnames(ArrayAve)<-treats
 ArrayAve<-ArrayAve[,!apply(is.na(ArrayAve),2,all)]
 #now write the file for use in integrating datasets
 #info2<-subset(info, treatment %in% colnames(ArrayAve))#should be the same dimensions
-info$ProcessFileAve<-paste("ProcArrayMean",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
+info$ProcessFileAve<-paste("Mean",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
 #write object to table to facilitate input and mergeing
 #the pattern of filenames should facilitate the retreival and then the checking
-write.table(ArrayAve, file=file.path(outdir, unique(info$ProcessFileAve)), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) #mean expression values
+write.table(ArrayAve, file=file.path(outdir, "ProcArray", unique(info$ProcessFileAve)), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) #mean expression values
 #and to make a shorter info file that doesnt contain all the clinical chemistry values (which arent helpful here)
 ########################################
 

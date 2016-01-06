@@ -59,7 +59,7 @@ od = @config[:runParameters]["basedir"]
 #end
 ####################################################
 #to run:
-# rake parameters="Z:/TGGATES2/Files/InputParametersRatLiver-20160104.yml" OrganType="Liver" runID="testLivSviv"  get_input --dry-run
+# rake parameters="Z:/TGGATES2/Files/InputParametersRatLiver-20160106.yml" OrganType="Liver" runID="testLivSviv"  get_input --dry-run
 #desc "Prep parameters"
 task :get_input do |t, args|
   #getting the parameters in a way that can be used by R scripts
@@ -71,6 +71,7 @@ task :get_input do |t, args|
   rpStr = ''
   @config[:runParameters].each do |k,v|
     rpStr.concat("#{k}=#{v.inspect} ")
+	#rpStr.concat("#{k}=\"#{v.inspect}\" ")
   end
   @pAry = []
   if @Repeat !='MULTI'
@@ -94,6 +95,7 @@ task :get_input do |t, args|
 	@pAry[j] = pStr + rpStr + "t1=#{@t1} "+"t2=#{@t2} "+"fc=#{@fc} "+"runID=#{@runID.inspect} "+"outdir=#{@outDir.inspect} "+"Repeat=#{@Repeat.inspect} "+"AnnFile=#{@AnnFile.inspect} "+"PathFile=#{@PathFile.inspect}"
   end
 #   puts "Input Complete!!"
+  # p @pAry[j]
    puts "Used parameters located #{@parameters}"
    puts "For tissue type #{@OrganType}"
 end
@@ -103,7 +105,7 @@ end
 ########
 #this file task will generate the input for the R_Affy, but still allow R_Affy to be called
 #note that this will always generate a new file (or rewrite an existing one), 
-#but that file will have the files uesed for that ru    @pAry[j] = pStr + rpStr + "t1=#{@t1} "+"t2=#{@t2} "+"k=#{@k} "+"runID=#{@runID.inspect} "+"outdir=#{@outDir.inspect} "+"Repeat=#{@Repeat.inspect} "nID
+#but that file will have the files uesed for that r
 desc "RMA normalization by folder"
 file "#{@AffyProcFiles}" => ["#{@AffyProcDir}", "#{@outDir}", "#{@logDir}"] do
 #file "#{@AffyProcFiles}" =>[:get_input] do |t, args|
@@ -133,11 +135,13 @@ file "#{@AffyProcFiles}" => ["#{@AffyProcDir}", "#{@outDir}", "#{@logDir}"] do
     fm = ForkManager.new(numProc)
     stats = fm.manage do
       n = @pAry.length
+	  #n=2
       for i in 0..n-1 do
-       # puts "Starting iteration #{i}"
+       puts "Starting iteration #{i}"
         fm.fork do
-          ccem=@pAry[i].match(/chem=\"(\S+)\"/)[1]        
-          system("R CMD BATCH --no-save --no-restore '--args #{@pAry[i]}' AffyAnalysis.R #{@logDir}/RAffy-#{ccem}-#{@runID}.out")
+          ccem=@pAry[i].match(/chem=\"(\S+)\"/)[1]     
+		#  p @pAry[i]
+          system("R CMD BATCH --no-save --no-restore '--args #{@pAry[i].inspect}' AffyAnalysis.R #{@logDir}/RAffy-#{ccem}-#{@runID}.out")
         # puts " CHILD PID #{Process.pid} for #{ccem} done!"
         end
       end
@@ -152,7 +156,7 @@ directory "#{@outDir}"
 directory "#{@logDir}"
 ##############################
 #to run: (use -n for a dryrun first)
-# rake parameters="Z:/TGGATES2/Files/InputParametersRatLiver-20160104.yml" OrganType="Liver" runID="RatLiv20160104" numProc=3  R_Affy --dry-run
+# rake parameters="Z:/TGGATES2/Files/InputParametersRatLiver-20160106.yml" OrganType="Liver" runID="RatLiv20160106" numProc=3  R_Affy --dry-run
 
 desc "Perform RMA normilzation and treatment-level summerization for each chemical by calling a file task"
 task :R_Affy =>[:get_input, "#{@AffyProcFiles}"] do
