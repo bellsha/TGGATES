@@ -71,7 +71,8 @@ info$treatment<-gsub("[[:space:]]","",as.factor(paste(info$ORGAN_ID, chem, info$
 # experiment<-gsub("[[:space:],%-/]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRIFICE_PERIOD, info$SINGLE_REPEAT_TYPE, sep="_")))
 info$experiment <-gsub("[[:space:]]","",as.factor(paste(info$ORGAN_ID, chem, info$SACRI_PERIOD, info$SIN_REP_TYPE, sep="_")))
 info$RunID <- runID
-info$ProcessFileInd<-paste("Ind",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
+RS<-unique(info$SIN_REP_TYPE)
+info$ProcessFileInd<-paste("Ind",organ,chem,RS, paste(runID, 'txt', sep='.'), sep='-')
 
 #write out the efile
 write.table(edata, file=file.path(outdir,"ProcArray", unique(info$ProcessFileInd)), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) #mean expression values
@@ -97,7 +98,7 @@ colnames(ArrayAve)<-treats
 ArrayAve<-ArrayAve[,!apply(is.na(ArrayAve),2,all)]
 #now write the file for use in integrating datasets
 #info2<-subset(info, treatment %in% colnames(ArrayAve))#should be the same dimensions
-info$ProcessFileAve<-paste("Mean",organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
+info$ProcessFileAve<-paste("Mean",organ,chem,RS, paste(runID, 'txt', sep='.'), sep='-')
 #write object to table to facilitate input and mergeing
 #the pattern of filenames should facilitate the retreival and then the checking
 write.table(ArrayAve, file=file.path(outdir, "ProcArray", unique(info$ProcessFileAve)), sep='\t', row.names=TRUE, col.names=TRUE, quote=FALSE) #mean expression values
@@ -108,6 +109,7 @@ write.table(ArrayAve, file=file.path(outdir, "ProcArray", unique(info$ProcessFil
 # [1] "folder"         "filename"       "BARCODE"        "ORGAN_ID"       "COMPOUND_NAME"  "COMPOUND.Abbr." "SPECIES"       
 # [8] "TEST_TYPE"      "SIN_REP_TYPE"   "SACRI_PERIOD"   "DOSE_LEVEL"     "Array_ID"       "treatment"      "experiment"    
 # [15] "RunID"          "ProcessFileInd" "ProcessFileAve"
-fname<-paste("RunInfo", organ, paste(runID, 'txt', sep='.'), sep='-')
-write.table(info, file=file.path(outdir, fname), sep='\t', append=TRUE, row.names=FALSE, col.names=FALSE, quote=FALSE)
+#write the info to a specific file in a subfolder, this will be collected with all the data being processed
+fname<-paste("RunInfo", organ,chem,Repeat, paste(runID, 'txt', sep='.'), sep='-')
+write.table(info, file=file.path(outdir,"Info", fname), sep='\t', append=TRUE, row.names=FALSE, col.names=FALSE, quote=FALSE)
 
