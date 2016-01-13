@@ -21,11 +21,16 @@ if(length(args)==0){
   break
   ##supply default values
   
-  outdir <- '/datadrive/TG-Gates/Output/testLiv'
-  chem<-'colchicine'
+  d <-"Z:/TGGATES2/Data/Microarray/acetaminophen.Rat.in_vivo.Liver.Single/celfiles"
+  exptinfo<-"Z:/TGGATES2/Files/Open-tggates_AllAttribute_EDT_RatLiver.txt"
+  basedir="Z:/TGGATES2"
+  outdir <- 'Z:/TGGATES2/Output/RatLiv20160106'
+  chem<-'APAP'
   organ<-'Liver'
-  runID<-'testLiv'
-  Repeat<-"Single"
+  runID<-"RatLiv20160106"
+  Repeat<-"MULTI"
+  PathFile="Z:/TGGATES2/Files/Rat2MouseReactomeEDIT201312.txt"
+  AnnFile="Z:/TGGATES2/Files/rat2302.probe.entrez.go_20141029.txt"
   t1<-0.75
 #   t2<-0.75
 #   k<-50
@@ -37,7 +42,7 @@ if(length(args)==0){
   }
 }
 #libraries
-library(gdata)
+#library(gdata)
 library(doBy)
 # library(gplots)
 # library(RColorBrewer)
@@ -48,10 +53,11 @@ library(doBy)
 fname<-paste("RunInfo", organ, paste(runID, 'txt', sep='.'), sep='-')
 #read in the file info
 info<-read.table(file.path(outdir, fname), sep='\t', header=FALSE, na.strings='', quote="\"")
-colnames(info)<-c("runID", "fileName","SPECIES","ORGAN_ID", "CHEMICAL", "DOSE_LEVEL", "SACRIFICE_PERIOD","TEST-TYPE","SINGLE_REPEAT_TYPE", "folder", "treatment", "experiment")
+colnames(info)<-c("folder","filename","BARCODE","ORGAN_ID","COMPOUND_NAME","COMPOUND.Abbr.","SPECIES","TEST_TYPE","SIN_REP_TYPE",
+                  "SACRI_PERIOD","DOSE_LEVEL","Array_ID","treatment","experiment","RunID","ProcessFileInd","ProcessFileAve")
 #adding in factorization of some levels
 info$DOSE_LEVEL<-factor(info$DOSE_LEVEL, levels=c("Control","Low","Middle","High"), ordered=TRUE)
-info$SACRIFICE_PERIOD<-factor(info$SACRIFICE_PERIOD, levels=c("3 hr", "6 hr", "9 hr", "24 hr", "4 day","8 day", "15 day", "29 day"), ordered=TRUE)
+info$SACRI_PERIOD<-factor(info$SACRI_PERIOD, levels=c("3 hr", "6 hr", "9 hr", "24 hr", "4 day","8 day", "15 day", "29 day"), ordered=TRUE)
 
 #output for verification:
 info[1,]
