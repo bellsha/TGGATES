@@ -120,12 +120,13 @@ file "#{@AffyProcFiles}" => ["#{@AffyProcDir}", "#{@outDir}", "#{@logDir}"] do
     folders = folders.merge(tmp)
   end
 #  temp = @config[:FolderbyExpt][@OrganType][@Cell][@Repeat]
+#check to see if all chemicals in the input file have alteady been run
   tk = folders.keys
   for i in 0..tk.length-1 do
     cpd = folders[tk[i]]["chem"]
-    chemList << "ExpAVE-" + "#{@OrganType}-" "#{cpd}" + "-#{@runID}.txt"
+    chemList << "Ind-" + "#{@OrganType}-" "#{cpd}" + "-#{@runID}.txt"
   end
-  test = Dir["#{od}/ProcArray/ExpAVE-#{@OrganType}*-#{@runID}.txt"].collect{|f| f.gsub("#{od}/ProcArray",'')}
+  test = Dir["#{od}/ProcArray/Ind-#{@OrganType}*-#{@runID}.txt"].collect{|f| f.gsub("#{od}/ProcArray",'')}
 
   if chemList.all?{|c| test.include?(c)}
     puts "Data are already pre-processed"
@@ -133,6 +134,8 @@ file "#{@AffyProcFiles}" => ["#{@AffyProcDir}", "#{@outDir}", "#{@logDir}"] do
     #add in functionality to do those not on the list???
     numProc = ENV["numProc"].to_i || 4
     fm = ForkManager.new(numProc)
+	#create a temp directory
+	Dir.mkdir("#{@outDir}/Info")
     stats = fm.manage do
       n = @pAry.length
 	  #n=2
@@ -146,17 +149,20 @@ file "#{@AffyProcFiles}" => ["#{@AffyProcDir}", "#{@outDir}", "#{@logDir}"] do
         end
       end
     end
+    #merge all the output files into 1
+    system("cat #{@outDir}/Info/*.txt > #{@outDir}/RunInfo-#{@OrganType}-#{@runID}.txt")
   end  
-  filesEnd = Dir["#{od}/ProcArray/ExpAVE-#{@OrganType}*-#{@runID}.txt"]
+  
+  filesEnd = Dir["#{od}/ProcArray/Ind-#{@OrganType}*-#{@runID}.txt"]
   File.open("#{@AffyProcFiles}", 'w') {|f| f.puts(filesEnd) }  
 end
 ###
-directory "#{@AffyProcDir}"
 directory "#{@outDir}"
+directory "#{@AffyProcDir}"
 directory "#{@logDir}"
 ##############################
 #to run: (use -n for a dryrun first)
-# rake parameters="Z:/TGGATES2/Files/InputParametersRatLiver-20160106.yml" OrganType="Liver" runID="RatLiv20160106" numProc=3  R_Affy --dry-run
+# rake parameters="Z:/TGGATES2/Files/InputParametersRatLiver-20160108.yml" OrganType="Liver" runID="RatLiv20160108" numProc=6  R_Affy --dry-run
 
 desc "Perform RMA normilzation and treatment-level summerization for each chemical by calling a file task"
 task :R_Affy =>[:get_input, "#{@AffyProcFiles}"] do
